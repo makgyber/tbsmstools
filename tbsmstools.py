@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tkinter
+from tkinter.messagebox import askyesno
 
 import ttkbootstrap as ttk
 from dotenv import load_dotenv
@@ -10,7 +11,7 @@ from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
 from messages import QueuedMessages, SentMessages, FailedMessages
-from utils import put_message_to_queue
+from utils import put_message_to_queue, purge_folder
 
 
 class LogsWindow(ttk.Frame):
@@ -84,14 +85,13 @@ class TbSmsTools(tkinter.Tk):
 
         menubar = ttk.Menu()
         file_menu = ttk.Menu(menubar, tearoff=False)
-        file_menu.add_command(
-            label="New Message",
-        )
-        file_menu.add_command(label="Refresh logs", command=self.refresh_logs)
+        file_menu.add_command(label="Refresh table views", command=self.refresh_data)
+        file_menu.add_command(label="Refresh modem logs", command=self.refresh_logs)
+        file_menu.add_command(label="Purge files", command=self.purge)
         file_menu.add_separator()
         file_menu.add_command(label="Quit", command=quit_app)
 
-        menubar.add_cascade(menu=file_menu, label="SMS Messages")
+        menubar.add_cascade(menu=file_menu, label="Toolbox actions")
 
         self.message_form = MessageForm(self)
 
@@ -125,6 +125,21 @@ class TbSmsTools(tkinter.Tk):
         self.logs_window.output_text.insert(ttk.END, result.stdout)
         self.logs_window.output_text.insert(ttk.END, result.stderr)
 
+    def refresh_data(self):
+        app.failed_messages.refresh_data()
+        app.sent_messages.refresh_data()
+        app.queued_messages.refresh_data()
+
+    def purge(self):
+        answer = askyesno(
+            title="confirmation",
+            message="Are you sure you want to purge all sms messages? This can not be undone.",
+        )
+        if answer:
+            purge_folder("sent")
+            purge_folder("failed")
+            purge_folder("incoming")
+
 
 class MessageHandler(FileSystemEventHandler):
     def processor(self, event: FileSystemEvent, action: str):
@@ -147,7 +162,12 @@ class MessageHandler(FileSystemEventHandler):
 
 
 def quit_app():
-    quit()
+    answer = askyesno(
+        title="confirmation",
+        message="Are you sure you want exit the application?",
+    )
+    if answer:
+        quit()
 
 
 if __name__ == "__main__":
