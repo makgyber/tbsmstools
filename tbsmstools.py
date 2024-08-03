@@ -6,15 +6,35 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap import Style
 from dotenv import load_dotenv
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 
 class QueuedMessages(ttk.Frame):
+    col_data = [
+        {"text": "To", "stretch": False},
+        {"text": "Message", "stretch": True},
+    ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pack(fill=BOTH, expand=YES)
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/outgoing"
 
-        rowdata = []
+        self.dt = Tableview(
+            master=self,
+            autofit=True,
+            coldata=self.col_data,
+            rowdata=self.get_row_data(),
+            paginated=True,
+            searchable=False,
+            bootstyle=PRIMARY,
+        )
+        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
+
+    def get_row_data(self):
+        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/outgoing"
+        rowData = []
         for x in os.listdir(msg_path):
             if x.endswith(".sms"):
                 f = open(f"{msg_path}/{x}")
@@ -26,33 +46,47 @@ class QueuedMessages(ttk.Frame):
                             to = line.replace("To: ", "")
                         else:
                             msg = line
-                rowdata.append((to, msg))
+                rowData.append((to, msg))
                 to = ""
                 msg = ""
+        return rowData
 
-        coldata = [
-            {"text": "To", "stretch": False},
-            {"text": "Message", "stretch": True},
-        ]
-
-        dt = Tableview(
-            master=self,
-            coldata=coldata,
-            rowdata=rowdata,
-            paginated=True,
-            searchable=False,
-            bootstyle=PRIMARY,
-        )
-        dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
+    def refresh_data(self):
+        self.dt.build_table_data(coldata=self.col_data, rowdata=self.get_row_data())
+        self.dt.reset_table()
 
 
 class SentMessages(ttk.Frame):
+    coldata = [
+        "To",
+        "Modem",
+        "Date sent",
+        "Sending time",
+        "IMSI",
+        "IMEI",
+        {"text": "Message", "stretch": True},
+    ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pack(fill=BOTH, expand=YES)
 
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/sent"
+        self.dt = Tableview(
+            master=self,
+            coldata=self.coldata,
+            rowdata=self.get_row_data(),
+            paginated=True,
+            searchable=False,
+            bootstyle=SUCCESS,
+        )
+        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
 
+    def refresh_data(self):
+        self.dt.build_table_data(coldata=self.coldata, rowdata=self.get_row_data())
+        self.dt.reset_table()
+
+    def get_row_data(self):
+        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/sent"
         rowdata = []
         for x in os.listdir(msg_path):
             if x.endswith(".sms"):
@@ -88,35 +122,40 @@ class SentMessages(ttk.Frame):
                 sending_time = ""
                 imsi = ""
                 imei = ""
-
-        coldata = [
-            "To",
-            "Modem",
-            "Date sent",
-            "Sending time",
-            "IMSI",
-            "IMEI",
-            {"text": "Message", "stretch": True},
-        ]
-
-        dt = Tableview(
-            master=self,
-            coldata=coldata,
-            rowdata=rowdata,
-            paginated=True,
-            searchable=False,
-            bootstyle=SUCCESS,
-        )
-        dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
+        return rowdata
 
 
 class FailedMessages(ttk.Frame):
+    coldata = [
+        "To",
+        "Modem",
+        "Date failed",
+        "IMSI",
+        "IMEI",
+        "Failure reason",
+        {"text": "Message", "stretch": True},
+    ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pack(fill=BOTH, expand=YES)
 
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/failed"
+        self.dt = Tableview(
+            master=self,
+            coldata=self.coldata,
+            rowdata=self.get_row_data(),
+            paginated=True,
+            searchable=False,
+            bootstyle=DANGER,
+        )
+        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
 
+    def refresh_data(self):
+        self.dt.build_table_data(coldata=self.coldata, rowdata=self.get_row_data())
+        self.dt.reset_table()
+
+    def get_row_data(self):
+        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/failed"
         rowdata = []
         for x in os.listdir(msg_path):
             if x.endswith(".sms"):
@@ -152,35 +191,14 @@ class FailedMessages(ttk.Frame):
                 failed_reason = ""
                 imsi = ""
                 imei = ""
-
-        coldata = [
-            "To",
-            "Modem",
-            "Date failed",
-            "IMSI",
-            "IMEI",
-            "Failure reason",
-            {"text": "Message", "stretch": True},
-        ]
-
-        dt = Tableview(
-            master=self,
-            coldata=coldata,
-            rowdata=rowdata,
-            paginated=True,
-            searchable=False,
-            bootstyle=DANGER,
-        )
-        dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
+        return rowdata
 
 
 class LogsWindow(ttk.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pack(fill=BOTH, expand=YES)
-        self.label = ttk.Label(
-            text="Logs",
-        )
+        self.label = ttk.Label(text="Refresh logs")
         self.label.pack(padx=5)
         self.output_text = ttk.Text()
         self.output_text.pack(fill=BOTH, expand=YES, padx=5, pady=5)
@@ -251,23 +269,27 @@ class TbSmsTools(tkinter.Tk):
         file_menu.add_command(
             label="New Message",
         )
-        file_menu.add_command(label="Refresh logs", command=self.refresh_logs)
+        file_menu.add_command(label="Modem activity logs", command=self.refresh_logs)
         file_menu.add_separator()
         file_menu.add_command(label="Quit", command=quit_app)
 
         menubar.add_cascade(menu=file_menu, label="Messages")
 
         self.tabs = ttk.Notebook(padding=5, width=self.winfo_screenwidth())
-        self.tabs.add(QueuedMessages(self, padding=2), text="Queued", sticky="nsew")
-        self.tabs.add(SentMessages(self, padding=2), text="Sent", sticky="nsew")
-        self.tabs.add(FailedMessages(self, padding=2), text="Failed", sticky="nsew")
+        self.queued_messages = QueuedMessages(self, padding=2)
+        self.tabs.add(self.queued_messages, text="Queued", sticky="nsew")
+        self.sent_messages = SentMessages(self, padding=2)
+        self.tabs.add(self.sent_messages, text="Sent", sticky="nsew")
+        self.failed_messages = FailedMessages(self, padding=2)
+        self.tabs.add(self.failed_messages, text="Failed", sticky="nsew")
 
         self.tabs.pack()
         self.separator = ttk.Separator(style="info.Horizontal.TSeparator")
         self.separator.pack()
         self.logs_window = LogsWindow(self, relief="sunken")
+        self.logs_window.after(3000, self.refresh_logs)
         self.config(menu=menubar)
-        self.refresh_logs()
+        # self.refresh_logs()
 
     def refresh_logs(self):
         # The command you want to execute
@@ -282,10 +304,28 @@ class TbSmsTools(tkinter.Tk):
         self.logs_window.output_text.insert(ttk.END, result.stderr)
 
 
+class MessageHandler(FileSystemEventHandler):
+    def on_any_event(self, event):
+        print(f"File {event.src_path} has been modified")
+        if "outgoing" in event.src_path:
+            app.queued_messages.refresh_data()
+        if "sent" in event.src_path:
+            app.sent_messages.refresh_data()
+        if "failed" in event.src_path:
+            app.failed_messages.refresh_data()
+
+
 def quit_app():
     quit()
 
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    TbSmsTools().mainloop()
+    app = TbSmsTools()
+    event_handler = MessageHandler()
+    observer = Observer()
+    observer.schedule(event_handler, os.environ.get("SMS_MESSAGE_PATH"), recursive=True)
+    observer.start()
+    app.mainloop()
+    observer.stop()
+    observer.join()
