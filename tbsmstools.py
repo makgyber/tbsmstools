@@ -26,12 +26,12 @@ class LogsWindow(ttk.Frame):
             text="Modem activity logs",
             justify=LEFT,
             anchor="w",
-            font=("Helvetica", 16),
+            font=("Helvetica", 12),
         ).pack(fill=X, expand=YES, padx=10)
 
         self.output_text = ttk.ScrolledText(self)
         self.output_text.bind("<Key>", lambda e: "break")
-        self.output_text.pack(fill=BOTH, expand=True, side=BOTTOM, padx=10, pady=10)
+        self.output_text.pack(fill=BOTH, expand=True, side=BOTTOM, padx=10, pady=5)
 
 
 class MessageForm(ttk.Frame):
@@ -44,18 +44,18 @@ class MessageForm(ttk.Frame):
             self,
             text="Create new SMS message",
             width=60,
-            font=("Helvetica", 18),
-        ).grid(columnspan=2, pady=10, padx=10)
+            font=("Helvetica", 14),
+        ).grid(columnspan=2, pady=5, padx=10)
 
         ttk.Label(
             self,
             text="To: ",
-        ).grid(row=1, column=0, sticky="ew", pady=10, padx=(10, 10))
+        ).grid(row=1, column=0, sticky="ew", pady=5, padx=(10, 10))
         self.to_entry = ttk.Entry(self)
         self.to_entry.grid(row=1, column=1, sticky="ew", columnspan=2, padx=20)
 
         ttk.Label(self, text="Body: ").grid(
-            row=2, column=0, sticky="ew", pady=10, padx=(10, 10)
+            row=2, column=0, sticky="ew", pady=5, padx=(10, 10)
         )
         self.body_text = ttk.Text(self, height=3)
         self.body_text.grid(row=2, column=1, sticky="ew", columnspan=2, padx=20)
@@ -66,7 +66,7 @@ class MessageForm(ttk.Frame):
             style="success.TButton",
         )
         self.submit_btn.grid(
-            row=4, column=2, sticky="ew", pady=10, padx=(10, 20), columnspan=1
+            row=4, column=2, sticky="ew", pady=5, padx=(10, 20), columnspan=1
         )
 
     def on_submit(self):
