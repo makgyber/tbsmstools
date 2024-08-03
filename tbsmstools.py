@@ -8,7 +8,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap import Style
 from dotenv import load_dotenv
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from messages import QueuedMessages, SentMessages, FailedMessages
 from utils import put_message_to_queue
 
@@ -128,14 +128,23 @@ class TbSmsTools(tkinter.Tk):
 
 
 class MessageHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
-        print(f"File {event.src_path} has been modified")
+    def processor(self, event: FileSystemEvent, action: str):
+        print(f"File {event.src_path} has been {action}")
         if "outgoing" in event.src_path:
             app.queued_messages.refresh_data()
         if "sent" in event.src_path:
             app.sent_messages.refresh_data()
         if "failed" in event.src_path:
             app.failed_messages.refresh_data()
+
+    def on_moved(self, event):
+        self.processor(event, "moved")
+
+    def on_created(self, event: FileSystemEvent) -> None:
+        self.processor(event, "created")
+
+    def on_deleted(self, event: FileSystemEvent) -> None:
+        self.processor(event, "deleted")
 
 
 def quit_app():
