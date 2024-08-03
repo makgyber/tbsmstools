@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from messages import QueuedMessages, SentMessages, FailedMessages
+from utils import put_message_to_queue
 
 
 class LogsWindow(ttk.Frame):
@@ -69,12 +70,9 @@ class MessageForm(ttk.Frame):
         )
 
     def on_submit(self):
-        path = os.environ.get("SMS_MESSAGE_PATH")
-        f = open(path + "/outgoing/" + shortuuid.uuid() + ".sms", "w")
         to = self.to_entry.get()
         message = self.body_text.get("1.0", END)
-        f.write(f"To: {to}\n\n\n{message}")
-        f.close()
+        put_message_to_queue(message, to)
         self.to_entry.delete(0, END)
         self.body_text.delete("0.0", END)
 
