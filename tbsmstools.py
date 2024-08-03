@@ -1,261 +1,82 @@
 import os
 import tkinter
 import subprocess
+
+import shortuuid
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
-from ttkbootstrap.tableview import Tableview
 from ttkbootstrap import Style
 from dotenv import load_dotenv
-import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-
-
-class QueuedMessages(ttk.Frame):
-    col_data = [
-        {"text": "To", "stretch": False},
-        {"text": "Message", "stretch": True},
-    ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pack(fill=BOTH, expand=YES)
-
-        self.dt = Tableview(
-            master=self,
-            autofit=True,
-            coldata=self.col_data,
-            rowdata=self.get_row_data(),
-            paginated=True,
-            searchable=False,
-            bootstyle=PRIMARY,
-        )
-        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
-
-    def get_row_data(self):
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/outgoing"
-        rowData = []
-        for x in os.listdir(msg_path):
-            if x.endswith(".sms"):
-                f = open(f"{msg_path}/{x}")
-                to = ""
-                msg = ""
-                for line in f:
-                    if len(line) > 0:
-                        if line.startswith("To: "):
-                            to = line.replace("To: ", "")
-                        else:
-                            msg = line
-                rowData.append((to, msg))
-                to = ""
-                msg = ""
-        return rowData
-
-    def refresh_data(self):
-        self.dt.build_table_data(coldata=self.col_data, rowdata=self.get_row_data())
-        self.dt.reset_table()
-
-
-class SentMessages(ttk.Frame):
-    coldata = [
-        "To",
-        "Modem",
-        "Date sent",
-        "Sending time",
-        "IMSI",
-        "IMEI",
-        {"text": "Message", "stretch": True},
-    ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pack(fill=BOTH, expand=YES)
-
-        self.dt = Tableview(
-            master=self,
-            coldata=self.coldata,
-            rowdata=self.get_row_data(),
-            paginated=True,
-            searchable=False,
-            bootstyle=SUCCESS,
-        )
-        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
-
-    def refresh_data(self):
-        self.dt.build_table_data(coldata=self.coldata, rowdata=self.get_row_data())
-        self.dt.reset_table()
-
-    def get_row_data(self):
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/sent"
-        rowdata = []
-        for x in os.listdir(msg_path):
-            if x.endswith(".sms"):
-                f = open(f"{msg_path}/{x}")
-                to = ""
-                msg = ""
-                modem = ""
-                sent = ""
-                sending_time = ""
-                imsi = ""
-                imei = ""
-                for line in f:
-                    if len(line) > 0:
-                        if line.startswith("To: "):
-                            to = line.replace("To: ", "")
-                        elif line.startswith("Modem: "):
-                            modem = line.replace("Modem: ", "")
-                        elif line.startswith("Sent: "):
-                            sent = line.replace("Sent: ", "")
-                        elif line.startswith("Sending_time: "):
-                            sending_time = line.replace("Sending_time: ", "")
-                        elif line.startswith("IMSI: "):
-                            imsi = line.replace("IMSI: ", "")
-                        elif line.startswith("IMEI: "):
-                            imei = line.replace("IMEI: ", "")
-                        else:
-                            msg = line
-                rowdata.append((to, modem, sent, sending_time, imsi, imei, msg))
-                to = ""
-                msg = ""
-                modem = ""
-                sent = ""
-                sending_time = ""
-                imsi = ""
-                imei = ""
-        return rowdata
-
-
-class FailedMessages(ttk.Frame):
-    coldata = [
-        "To",
-        "Modem",
-        "Date failed",
-        "IMSI",
-        "IMEI",
-        "Failure reason",
-        {"text": "Message", "stretch": True},
-    ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pack(fill=BOTH, expand=YES)
-
-        self.dt = Tableview(
-            master=self,
-            coldata=self.coldata,
-            rowdata=self.get_row_data(),
-            paginated=True,
-            searchable=False,
-            bootstyle=DANGER,
-        )
-        self.dt.pack(fill=BOTH, expand=YES, padx=5, pady=5)
-
-    def refresh_data(self):
-        self.dt.build_table_data(coldata=self.coldata, rowdata=self.get_row_data())
-        self.dt.reset_table()
-
-    def get_row_data(self):
-        msg_path = os.environ.get("SMS_MESSAGE_PATH", "/var/spool/sms") + "/failed"
-        rowdata = []
-        for x in os.listdir(msg_path):
-            if x.endswith(".sms"):
-                f = open(f"{msg_path}/{x}")
-                to = ""
-                msg = ""
-                modem = ""
-                failed = ""
-                failed_reason = ""
-                imsi = ""
-                imei = ""
-                for line in f:
-                    if len(line) > 0:
-                        if line.startswith("To: "):
-                            to = line.replace("To: ", "")
-                        elif line.startswith("Modem: "):
-                            modem = line.replace("Modem: ", "")
-                        elif line.startswith("Failed: "):
-                            failed = line.replace("Failed: ", "")
-                        elif line.startswith("Fail_reason: "):
-                            failed_reason = line.replace("Fail_reason: ", "")
-                        elif line.startswith("IMSI: "):
-                            imsi = line.replace("IMSI: ", "")
-                        elif line.startswith("IMEI: "):
-                            imei = line.replace("IMEI: ", "")
-                        else:
-                            msg = line
-                rowdata.append((to, modem, failed, imsi, imei, failed_reason, msg))
-                to = ""
-                msg = ""
-                modem = ""
-                failed = ""
-                failed_reason = ""
-                imsi = ""
-                imei = ""
-        return rowdata
+from messages import QueuedMessages, SentMessages, FailedMessages
 
 
 class LogsWindow(ttk.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pack(fill=BOTH, expand=YES)
-        self.label = ttk.Label(text="Refresh logs")
-        self.label.pack(padx=5)
-        self.output_text = ttk.Text()
-        self.output_text.pack(fill=BOTH, expand=YES, padx=5, pady=5)
+        self.pack(
+            fill=BOTH, expand=YES, side=BOTTOM, padx=5, pady=5, ipadx=10, ipady=10
+        )
+        self.config(relief=RIDGE)
+
+        ttk.Label(
+            self,
+            text="Modem activity logs",
+            justify=LEFT,
+            anchor="w",
+            font=("Helvetica", 16),
+        ).pack(fill=X, expand=YES, padx=10)
+
+        self.output_text = ttk.ScrolledText(self)
+        self.output_text.bind("<Key>", lambda e: "break")
+        self.output_text.pack(fill=BOTH, expand=True, side=BOTTOM, padx=10, pady=10)
 
 
-#  def create_sent_table(self):
-#      pass
-#
-#  def create_message_form(self):
-#      container = ttk.Frame(self)
-#      container.pack(fill=X, expand=YES, pady=(15, 10))
-#      self.to = ttk.StringVar(value="")
-#      self.message = ttk.StringVar(value="")
-#      self.create_form_entry("To:", self.to, container)
-#      self.create_form_entry("Message:", self.message, container)
-#      self.create_buttonbox(container)
-#      return container
-#
-# def create_form_entry(self, label, variable, root):
-#    """Create a single form entry"""
-#    container = ttk.Frame(root)
-#    container.pack(fill=X, expand=NO, pady=5)
-#    lbl = ttk.Label(master=container, text=label.title(), width=10)
-#    lbl.pack(side=LEFT, padx=5)
-#    ent = ttk.Entry(master=container, textvariable=variable)
-#    ent.pack(side=LEFT, padx=5, fill=X, expand=YES)
-#
-# def create_buttonbox(self, root):
-#    """Create the application buttonbox"""
-#    container = ttk.Frame(root)
-#    container.pack(fill=X, expand=YES, pady=(15, 10))
-#    sub_btn = ttk.Button(
-#       master=container,
-#       text="Submit",
-#       command=self.on_submit,
-#       bootstyle=SUCCESS,
-#       width=6,
-#    )
-#    sub_btn.pack(side=RIGHT, padx=5)
-#    sub_btn.focus_set()
-#    cnl_btn = ttk.Button(
-#       master=container,
-#       text="Cancel",
-#       command=self.on_cancel,
-#       bootstyle=DANGER,
-#       width=6,
-#    )
-#    cnl_btn.pack(side=RIGHT, padx=5)
-#    return container
-#
-# def on_submit(self):
-#    """Print the contents to console and return the values."""
-#    print("Name:", self.name.get())
-#    print("Address:", self.address.get())
-#    print("Phone:", self.phone.get())
-#    return self.name.get(), self.address.get(), self.phone.get()
-#
+class MessageForm(ttk.Frame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pack(fill=BOTH, expand=YES, side=TOP, padx=20, pady=20)
+        self.config(relief=SUNKEN)
+        self.columnconfigure(2, weight=1)
+        ttk.Label(
+            self,
+            text="Create new SMS message",
+            width=60,
+            font=("Helvetica", 18),
+        ).grid(columnspan=2, pady=10, padx=10)
+
+        ttk.Label(
+            self,
+            text="To: ",
+        ).grid(row=1, column=0, sticky="ew", pady=10, padx=(10, 10))
+        self.to_entry = ttk.Entry(self)
+        self.to_entry.grid(row=1, column=1, sticky="ew", columnspan=2, padx=20)
+
+        ttk.Label(self, text="Body: ").grid(
+            row=2, column=0, sticky="ew", pady=10, padx=(10, 10)
+        )
+        self.body_text = ttk.Text(self, height=3)
+        self.body_text.grid(row=2, column=1, sticky="ew", columnspan=2, padx=20)
+        self.submit_btn = ttk.Button(
+            self,
+            text="Submit",
+            command=self.on_submit,
+            style="success.TButton",
+        )
+        self.submit_btn.grid(
+            row=4, column=2, sticky="ew", pady=10, padx=(10, 20), columnspan=1
+        )
+
+    def on_submit(self):
+        path = os.environ.get("SMS_MESSAGE_PATH")
+        f = open(path + "/outgoing/" + shortuuid.uuid() + ".sms", "w")
+        to = self.to_entry.get()
+        message = self.body_text.get("1.0", END)
+        f.write(f"To: {to}\n\n\n{message}")
+        f.close()
+        self.to_entry.delete(0, END)
+        self.body_text.delete("0.0", END)
 
 
 class TbSmsTools(tkinter.Tk):
@@ -269,27 +90,31 @@ class TbSmsTools(tkinter.Tk):
         file_menu.add_command(
             label="New Message",
         )
-        file_menu.add_command(label="Modem activity logs", command=self.refresh_logs)
+        file_menu.add_command(label="Refresh logs", command=self.refresh_logs)
         file_menu.add_separator()
         file_menu.add_command(label="Quit", command=quit_app)
 
         menubar.add_cascade(menu=file_menu, label="Messages")
 
-        self.tabs = ttk.Notebook(padding=5, width=self.winfo_screenwidth())
+        self.message_form = MessageForm(self)
+
+        self.tabs = ttk.Notebook(
+            padding=10,
+            width=self.winfo_screenwidth(),
+        )
         self.queued_messages = QueuedMessages(self, padding=2)
         self.tabs.add(self.queued_messages, text="Queued", sticky="nsew")
         self.sent_messages = SentMessages(self, padding=2)
         self.tabs.add(self.sent_messages, text="Sent", sticky="nsew")
         self.failed_messages = FailedMessages(self, padding=2)
         self.tabs.add(self.failed_messages, text="Failed", sticky="nsew")
-
         self.tabs.pack()
-        self.separator = ttk.Separator(style="info.Horizontal.TSeparator")
-        self.separator.pack()
-        self.logs_window = LogsWindow(self, relief="sunken")
+
+        self.logs_window = LogsWindow(self)
+
         self.logs_window.after(3000, self.refresh_logs)
         self.config(menu=menubar)
-        # self.refresh_logs()
+        self.refresh_logs()
 
     def refresh_logs(self):
         # The command you want to execute
