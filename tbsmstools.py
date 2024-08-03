@@ -19,14 +19,13 @@ class LogsWindow(ttk.Frame):
         self.pack(
             fill=BOTH, expand=YES, side=BOTTOM, padx=5, pady=5, ipadx=10, ipady=10
         )
-        self.config(relief=RIDGE)
 
         ttk.Label(
             self,
             text="Modem activity logs",
             justify=LEFT,
             anchor="w",
-            font=("Helvetica", 12),
+            font=("Helvetica", 10),
         ).pack(fill=X, expand=YES, padx=10)
 
         self.output_text = ttk.ScrolledText(self)
