@@ -1,14 +1,14 @@
 import os
-import tkinter
 import subprocess
+import tkinter
 
-import shortuuid
 import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from ttkbootstrap import Style
 from dotenv import load_dotenv
-from watchdog.observers import Observer
+from ttkbootstrap import Style
+from ttkbootstrap.constants import *
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
+from watchdog.observers import Observer
+
 from messages import QueuedMessages, SentMessages, FailedMessages
 from utils import put_message_to_queue
 
@@ -43,7 +43,7 @@ class MessageForm(ttk.Frame):
             self,
             text="Create new SMS message",
             width=60,
-            font=("Helvetica", 14),
+            font=("Helvetica", 11),
         ).grid(columnspan=2, pady=5, padx=10)
 
         ttk.Label(
@@ -91,7 +91,7 @@ class TbSmsTools(tkinter.Tk):
         file_menu.add_separator()
         file_menu.add_command(label="Quit", command=quit_app)
 
-        menubar.add_cascade(menu=file_menu, label="Messages")
+        menubar.add_cascade(menu=file_menu, label="SMS Messages")
 
         self.message_form = MessageForm(self)
 
